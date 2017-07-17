@@ -98,7 +98,7 @@ module.exports = (function() {
 
 },{}],2:[function(require,module,exports){
 
-module.exports = (function(w) {
+module.exports = (function() {
 
 	// EXPECTS A MapboxWrapper object
 	// and NOT a mapbox-gl object.
@@ -491,7 +491,7 @@ module.exports = (function(w) {
 
 	return MapboxCluster;
 
-})( window );
+})();
 
 },{}],3:[function(require,module,exports){
 module.exports = (function() {

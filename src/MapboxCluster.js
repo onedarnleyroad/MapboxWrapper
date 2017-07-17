@@ -1,5 +1,5 @@
 
-module.exports = (function(w) {
+module.exports = (function() {
 
 	// EXPECTS A MapboxWrapper object
 	// and NOT a mapbox-gl object.
@@ -392,4 +392,4 @@ module.exports = (function(w) {
 
 	return MapboxCluster;
 
-})( window );
+})();
