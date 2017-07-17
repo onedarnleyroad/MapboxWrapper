@@ -1,3 +1,5 @@
+var h = require('./helpers');
+
 module.exports = (function() {
 
 	/*
@@ -20,11 +22,11 @@ module.exports = (function() {
 		}
 
 		this.map = options.map;
-		this.locations = _getProp( 'locations', options ) ;
-		this.template =  _getProp( 'template', options ) ;
-		this.elementCallback =  _getProp( 'elementCallback', options ) ;
-		this.onClick =  _getProp( 'onClick', options ) ;
-		this.addClass =  _getProp( 'addClass', options ) ;
+		this.locations = h._getProp( 'locations', options ) ;
+		this.template =  h._getProp( 'template', options ) ;
+		this.elementCallback =  h._getProp( 'elementCallback', options ) ;
+		this.onClick =  h._getProp( 'onClick', options ) ;
+		this.addClass =  h._getProp( 'addClass', options ) ;
 
 		this.markers = [];
 

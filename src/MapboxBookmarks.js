@@ -1,3 +1,5 @@
+var h = require('./helpers');
+
 module.exports = (function() {
 
 
@@ -13,7 +15,7 @@ module.exports = (function() {
 
 			var b = {};
 
-			// use _getProp to set the property of b based on the properties
+			// use h._getProp to set the property of b based on the properties
 			// given, OR set it to false if it doesn't exist. This just shortens
 			// the code here, and allows us to add properties quickly to this array
 			// as we think of them.
@@ -24,7 +26,7 @@ module.exports = (function() {
 				'zoomMobile',
 				'zoomBy'
 			].forEach(function( prop ) {
-				b[prop] = _getProp( prop, bookmark );
+				b[prop] = h._getProp( prop, bookmark );
 			});
 
 
@@ -33,7 +35,7 @@ module.exports = (function() {
 					var z = self.map.getZoom();
 					var minZ = self.map.getMinZoom();
 					var maxZ = self.map.getMaxZoom();
-					var newZ = _limitNumber( Math.round( z + b.zoomBy), minZ, maxZ );
+					var newZ = h._limitNumber( Math.round( z + b.zoomBy), minZ, maxZ );
 					self.map.zoomTo( newZ );
 				};
 			} else if ( b.location || b.zoom ) {
@@ -61,7 +63,7 @@ module.exports = (function() {
 				b.goto = function() {};
 			}
 
-			var target = _getProp( 'target', bookmark );
+			var target = h._getProp( 'target', bookmark );
 
 
 			if (typeof target === "string") {

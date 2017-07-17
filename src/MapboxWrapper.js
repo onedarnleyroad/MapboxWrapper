@@ -2,6 +2,8 @@ var MapboxBookmarks = require('./MapboxBookmarks');
 var MapboxMarkers = require('./MapboxMarkers');
 var MapboxCluster = require('./MapboxCluster');
 
+var h = require('./helpers');
+
 module.exports = (function() {
 
 
@@ -153,8 +155,8 @@ module.exports = (function() {
 		// two positions with same args?
 		flyTo: function( options, map ) {
 
-			var z = _getProp( 'zoom', options );
-			var center = _getProp( 'center', options );
+			var z = h._getProp( 'zoom', options );
+			var center = h._getProp( 'center', options );
 
 			var centerArray;
 
@@ -267,7 +269,7 @@ module.exports = (function() {
 		var self = this;
 
 		// For testing, allow a force of type:
-		self.type = _getProp( 'type', options );
+		self.type = h._getProp( 'type', options );
 		self.options = options
 
 		if (!self.type || (self.type != 'mapbox-gl' && self.type != 'leaflet' )) {

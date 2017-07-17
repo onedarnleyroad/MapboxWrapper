@@ -1,4 +1,5 @@
 
+var h = require('./helpers');
 var supercluster = require('supercluster');
 
 module.exports = (function() {
