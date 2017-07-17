@@ -1,4 +1,6 @@
 
+var supercluster = require('supercluster');
+
 module.exports = (function() {
 
 	// EXPECTS A MapboxWrapper object

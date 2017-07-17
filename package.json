@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/onedarnleyroad/MapboxWrapper#readme",
   "dependencies": {
-    "browserify": "^14.4.0"
+    "browserify": "^14.4.0",
+    "supercluster": "^2.3.0"
   }
 }
