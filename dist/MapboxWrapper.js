@@ -547,11 +547,27 @@ function getY(p) {
 }
 
 },{"kdbush":1}],6:[function(require,module,exports){
+var h = require('./helpers');
+
 module.exports = (function() {
 
 
 	var MapboxBookmarks = function( options ) {
-		this.map = options.map;
+		this.map = h_getProp('map', options );
+        this.animSpeed = h_getProp('animSpeed', options );
+
+        if (!this.animSpeed) {
+            this.animSpeed = 4000;
+        };
+
+        this.mobileCheck = h_getProp('animSpeed', options );
+
+        if (typeof this.mobileCheck != "function") {
+            this.mobileCheck = function() {
+                return window.matchMedia( '(max-width: 600px)' ).matches
+            };
+        }
+
 		this.bookmarks = {};
 
 		var self = this;
@@ -562,7 +578,7 @@ module.exports = (function() {
 
 			var b = {};
 
-			// use _getProp to set the property of b based on the properties
+			// use h._getProp to set the property of b based on the properties
 			// given, OR set it to false if it doesn't exist. This just shortens
 			// the code here, and allows us to add properties quickly to this array
 			// as we think of them.
@@ -573,7 +589,7 @@ module.exports = (function() {
 				'zoomMobile',
 				'zoomBy'
 			].forEach(function( prop ) {
-				b[prop] = _getProp( prop, bookmark );
+				b[prop] = h._getProp( prop, bookmark );
 			});
 
 
@@ -582,7 +598,7 @@ module.exports = (function() {
 					var z = self.map.getZoom();
 					var minZ = self.map.getMinZoom();
 					var maxZ = self.map.getMaxZoom();
-					var newZ = _limitNumber( Math.round( z + b.zoomBy), minZ, maxZ );
+					var newZ = h._limitNumber( Math.round( z + b.zoomBy), minZ, maxZ );
 					self.map.zoomTo( newZ );
 				};
 			} else if ( b.location || b.zoom ) {
@@ -591,16 +607,16 @@ module.exports = (function() {
 					var loc = b.location;
 					var z = b.zoom
 
-					if ( b.locationMobile && APP.media.matches('mobile') ) {
+					if ( b.locationMobile && self.mobileCheck() ) {
 						loc = b.locationMobile;
 					}
 
-					if ( b.zoomMobile && APP.media.matches('mobile') ) {
+					if ( b.zoomMobile && self.mobileCheck()) {
 						z = b.zoomMobile;
 					}
 
 					self.map.flyTo({
-						speed: APP.config.animSpeed,
+						speed: self.animSpeed,
 						zoom: z,
 						center: loc
 					});
@@ -610,16 +626,14 @@ module.exports = (function() {
 				b.goto = function() {};
 			}
 
-			var target = _getProp( 'target', bookmark );
+			var target = h._getProp( 'target', bookmark );
 
 
 			if (typeof target === "string") {
-				APP.promises.ready(function() {
-					$('body').on('click', target, function( e ) {
-						e.preventDefault();
-						this.blur();
-						b.goto( bookmark.id );
-					});
+				$('body').on('click', target, function( e ) {
+					e.preventDefault();
+					this.blur();
+					b.goto( bookmark.id );
 				});
 			}
 
@@ -644,8 +658,9 @@ module.exports = (function() {
 
 })();
 
-},{}],7:[function(require,module,exports){
+},{"./helpers":10}],7:[function(require,module,exports){
 
+var h = require('./helpers');
 var supercluster = require('supercluster');
 
 module.exports = (function() {
@@ -1043,7 +1058,9 @@ module.exports = (function() {
 
 })();
 
-},{"supercluster":5}],8:[function(require,module,exports){
+},{"./helpers":10,"supercluster":5}],8:[function(require,module,exports){
+var h = require('./helpers');
+
 module.exports = (function() {
 
 	/*
@@ -1066,11 +1083,11 @@ module.exports = (function() {
 		}
 
 		this.map = options.map;
-		this.locations = _getProp( 'locations', options ) ;
-		this.template =  _getProp( 'template', options ) ;
-		this.elementCallback =  _getProp( 'elementCallback', options ) ;
-		this.onClick =  _getProp( 'onClick', options ) ;
-		this.addClass =  _getProp( 'addClass', options ) ;
+		this.locations = h._getProp( 'locations', options ) ;
+		this.template =  h._getProp( 'template', options ) ;
+		this.elementCallback =  h._getProp( 'elementCallback', options ) ;
+		this.onClick =  h._getProp( 'onClick', options ) ;
+		this.addClass =  h._getProp( 'addClass', options ) ;
 
 		this.markers = [];
 
@@ -1126,10 +1143,12 @@ module.exports = (function() {
 
 })();
 
-},{}],9:[function(require,module,exports){
+},{"./helpers":10}],9:[function(require,module,exports){
 var MapboxBookmarks = require('./MapboxBookmarks');
 var MapboxMarkers = require('./MapboxMarkers');
 var MapboxCluster = require('./MapboxCluster');
+
+var h = require('./helpers');
 
 module.exports = (function() {
 
@@ -1282,8 +1301,8 @@ module.exports = (function() {
 		// two positions with same args?
 		flyTo: function( options, map ) {
 
-			var z = _getProp( 'zoom', options );
-			var center = _getProp( 'center', options );
+			var z = h._getProp( 'zoom', options );
+			var center = h._getProp( 'center', options );
 
 			var centerArray;
 
@@ -1396,7 +1415,7 @@ module.exports = (function() {
 		var self = this;
 
 		// For testing, allow a force of type:
-		self.type = _getProp( 'type', options );
+		self.type = h._getProp( 'type', options );
 		self.options = options
 
 		if (!self.type || (self.type != 'mapbox-gl' && self.type != 'leaflet' )) {
@@ -1516,8 +1535,41 @@ module.exports = (function() {
 	return MapboxWrapper;
 })();
 
-},{"./MapboxBookmarks":6,"./MapboxCluster":7,"./MapboxMarkers":8}],10:[function(require,module,exports){
+},{"./MapboxBookmarks":6,"./MapboxCluster":7,"./MapboxMarkers":8,"./helpers":10}],10:[function(require,module,exports){
+var _limitNumber = function( number, min, max ) {
+    return Math.max( min, Math.min( number, max ) );
+};
+
+
+// save time and checking by creating a wrapper
+// to check if a property exists in an object.
+// Right now it doesn't do deep checking, but
+// we could implement that in future or perhaps
+// use dot notation.
+//
+// This returns undefined if it's not set,
+// but not false. Of course if a property was
+// set to undefined you won't know this difference,
+// but this is good for when you don't care if ti was set
+// just that it's not 'truthy'
+var _getProp = function( prop, obj ) {
+
+    if ( obj.hasOwnProperty( prop ) ) {
+        return obj[prop];
+    } else {
+        return undefined;
+    }
+
+};
+
+
+module.exports = {
+    _getProp: _getProp,
+    _limitNumber: _limitNumber
+};
+
+},{}],11:[function(require,module,exports){
 module.exports = require('./MapboxWrapper.js');
 
-},{"./MapboxWrapper.js":9}]},{},[10])(10)
+},{"./MapboxWrapper.js":9}]},{},[11])(11)
 });

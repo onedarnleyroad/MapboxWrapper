@@ -81,12 +81,10 @@ module.exports = (function() {
 
 
 			if (typeof target === "string") {
-				APP.promises.ready(function() {
-					$('body').on('click', target, function( e ) {
-						e.preventDefault();
-						this.blur();
-						b.goto( bookmark.id );
-					});
+				$('body').on('click', target, function( e ) {
+					e.preventDefault();
+					this.blur();
+					b.goto( bookmark.id );
 				});
 			}
 
