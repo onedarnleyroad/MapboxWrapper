@@ -1,4 +1,4 @@
-;MapboxBookmarks = (function() {
+module.exports = (function() {
 
 
 	var MapboxBookmarks = function( options ) {

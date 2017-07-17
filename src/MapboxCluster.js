@@ -1,5 +1,5 @@
 
-MapboxCluster = (function(w) {
+module.exports = (function(w) {
 
 	// EXPECTS A MapboxWrapper object
 	// and NOT a mapbox-gl object.

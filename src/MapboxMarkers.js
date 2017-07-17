@@ -1,4 +1,4 @@
-MapboxMarkers = (function() {
+module.exports = (function() {
 
 	/*
 		Wrappers to take an array of markers, and plot them on mapbox gl or JS as needed,
