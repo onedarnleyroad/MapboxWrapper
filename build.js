@@ -4,7 +4,9 @@ var src = "./src/index.js";
 
 var browserify = require('browserify');
 var fs = require('fs');
-var b = browserify();
+var b = browserify({
+    standalone: 'MapboxWrapper'
+});
 
 var outputFs = fs.createWriteStream( dest );
 
