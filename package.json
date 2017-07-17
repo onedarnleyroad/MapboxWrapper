@@ -1,6 +1,6 @@
 {
   "name": "mapboxwrapper",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Wrapper for Mapbox GL and JS - can switch between leaflet and mapbox-gl",
   "main": "src/index.js",
   "scripts": {
