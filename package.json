@@ -1,0 +1,22 @@
+{
+  "name": "mapboxwrapper",
+  "version": "0.0.1",
+  "description": "Wrapper for Mapbox GL and JS - can switch between leaflet and mapbox-gl",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onedarnleyroad/MapboxWrapper.git"
+  },
+  "author": "One Darnley Road",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/onedarnleyroad/MapboxWrapper/issues"
+  },
+  "homepage": "https://github.com/onedarnleyroad/MapboxWrapper#readme",
+  "dependencies": {
+    "browserify": "^14.4.0"
+  }
+}
