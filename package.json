@@ -18,6 +18,10 @@
   "homepage": "https://github.com/onedarnleyroad/MapboxWrapper#readme",
   "dependencies": {
     "browserify": "^14.4.0",
+    "leaflet.markercluster": "^1.0.6",
+    "mapbox-gl": "^0.38.0",
+    "mapbox-gl-supported": "^1.2.0",
+    "mapbox.js": "^3.1.1",
     "supercluster": "^2.3.0"
   }
 }
