@@ -155,7 +155,10 @@ module.exports = (function() {
 
 			m.onClick = function(callback) {
 				m.on('click', function(e) {
-					callback.apply( m, [e] );
+                    // Get element on a click, because with leaflet, it might
+                    // not exist earlier.
+                    var $el = m.getElement();
+                    callback.apply( m, [e, m, $el, data] );
 				});
 			};
 
@@ -271,8 +274,9 @@ module.exports = (function() {
 			var $el = $( m.getElement() );
 
 			m.onClick = function(callback) {
-				$el.on('click', function(e) {
-					callback.apply( m, [e] );
+                console.log( callback );
+				$el.on('click', function(e, m, $el, data) {
+					callback.apply( m, [e, m, $el, data] );
 				});
 			};
 
@@ -398,6 +402,14 @@ module.exports = (function() {
 	MapboxWrapper.prototype.on = function( event, cb ) {
 		return this.map.on( event, cb );
 	};
+
+    MapboxWrapper.prototype.once = function( event, cb ) {
+        return this.map.once( event, cb );
+    };
+
+    MapboxWrapper.prototype.off = function( event, cb ) {
+        return this.map.off( event, cb );
+    };
 
 	MapboxWrapper.prototype.updateConfig = function( prop, value ) {
 		this._methods.updateConfig( prop, value, this.map );
