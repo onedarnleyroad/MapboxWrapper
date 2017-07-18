@@ -274,8 +274,10 @@ module.exports = (function() {
 			var $el = $( m.getElement() );
 
 			m.onClick = function(callback) {
-                console.log( callback );
-				$el.on('click', function(e, m, $el, data) {
+
+				$el.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
 					callback.apply( m, [e, m, $el, data] );
 				});
 			};
