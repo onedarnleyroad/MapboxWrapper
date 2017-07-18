@@ -30,6 +30,8 @@ module.exports = (function() {
 
 		this.markers = [];
 
+        this.bounds = this.map.LngLatBounds();
+
 		if (this.locations) {
 			this.addMarkers();
 		}
@@ -47,6 +49,8 @@ module.exports = (function() {
 		var template = self.template;
 		var elementCallback = self.elementCallback;
 		var onClick = self.onClick;
+
+        self.bounds.extend( markerData.location );
 
 		var thisMarker = self.map.addMarker( markerData.location, markerData, template );
 		thisMarker._addTo( self.map );
