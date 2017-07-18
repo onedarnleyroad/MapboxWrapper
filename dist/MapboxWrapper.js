@@ -680,9 +680,7 @@ module.exports = (function() {
 
 		// Callbacks for pin and cluster,
 		// use these for binding click events and the like
-		pinCallback: function( marker, $el, markerData, clusterObj ) {},
 		clusterCallback: function( e, marker, $el, markerData, clusterObj ) {
-
 
 				e.preventDefault();
 				e.stopPropagation();
@@ -702,8 +700,10 @@ module.exports = (function() {
 
 		},
 
+
+
 		// Swig templates for each cluster
-		pinTpl: false,
+		template: false,
 		clusterTpl: false,
 
 		// Either pass in geoJSON prepared, which will save
@@ -743,7 +743,7 @@ module.exports = (function() {
 				if ( !locations.hasOwnProperty( prop ) ) {
 					return;
 				} else {
-					_process( APP.mapData.locations[ prop ] );
+					_process( locations[ prop ] );
 				}
 			}
 		}
@@ -753,13 +753,13 @@ module.exports = (function() {
 
 
 	// Main constructor
-	var MapboxCluster = function( options ) {
+	var MapboxCluster = function( _options ) {
 
 
 		var self = this;
 
 		// Create defaults, setup object variables
-		var options = $.extend({}, defaults, options);
+		var options = $.extend({}, defaults, _options);
 
 		if (!options.map) {
 			console.error("MapboxWrapper instance must be provided");
@@ -771,9 +771,12 @@ module.exports = (function() {
 		this.maxZoom = options.maxZoom;
 		this.minZoom = options.minZoom;
 		this.step = options.step;
-		this.pinCallback = options.pinCallback;
+        this.onClick = h._getProp( 'onClick', options );
 		this.clusterCallback = options.clusterCallback;
-		this.pinTpl = options.pinTpl;
+		this.template = options.template;
+
+
+
 		this.clusterTpl = options.clusterTpl;
 		this.map = options.map;
 
@@ -782,8 +785,7 @@ module.exports = (function() {
 		self.activeLayers = [];
 		self.allLayers = false;
 		self.zoom = false;
-		self.bounds = self._getBounds();
-
+		self.bounds = this.map.LngLatBounds();
 
 		// Prepare location data, and load the cluster
 		if (options.locations) {
@@ -795,6 +797,11 @@ module.exports = (function() {
 				console.error("No geoJSON or locations provided");
 			}
 		}
+
+
+        self.geoJSON.forEach( function( point ) {
+            self.bounds.extend( point.geometry.coordinates );
+        });
 
 		// SPINUP:
 		//
@@ -846,18 +853,13 @@ module.exports = (function() {
 
 		self.geoJSON.forEach( function( point ) {
 
-			var marker = self.map.addMarker( point.geometry.coordinates, point.properties, self.pinTpl  );
+			var marker = self.map.addMarker( point.geometry.coordinates, point.properties, self.template  );
 
 			self.leafletClusters.addLayer( marker );
 
-
-			marker.on('click', function(e) {
-
-				if (typeof self.pinCallback === 'function') {
-					var $el = $( marker.getElement() );
-					self.pinCallback( e, marker, $el, point.properties, self );
-				}
-			});
+            if (typeof self.onClick === 'function') {
+                marker.onClick( self.onClick );
+            }
 
 		});
 
@@ -958,9 +960,9 @@ module.exports = (function() {
 			if ( feature.properties.hasOwnProperty('cluster') && feature.properties.cluster ) {
 				template = self.clusterTpl;
 				callback = self.clusterCallback;
-			} else if (feature.properties.hasOwnProperty('type') && feature.properties.type === "mapLocation" ) {
-				template = self.pinTpl;
-				callback = self.pinCallback;
+			} else {
+				template = self.template;
+				callback = self.onClick;
 			}
 
 			var thisMarker = self.map.addMarker( feature.geometry.coordinates, feature.properties, template );
@@ -976,10 +978,10 @@ module.exports = (function() {
 
 
 			if (typeof callback === 'function') {
-				$el.on('click', function(e) {
+				thisMarker.onClick( function(e) {
 					e.preventDefault();
 					e.stopPropagation();
-					callback( e, thisMarker, $el, feature.properties, self );
+					callback( e, thisMarker, $el, feature.properties );
 				});
 			}
 
@@ -1004,10 +1006,8 @@ module.exports = (function() {
 
 	MapboxCluster.prototype._plotLayers = function() {
 
-
-
-		for ( x=this.maxZoom; x>=this.minZoom; x=x-this.step ) {
-			var clusterData = this.index.getClusters( this.bounds, x );
+		for ( x=1; x<=this.maxZoom; x=x+this.step ) {
+			var clusterData = this.index.getClusters( this._getBounds(), x );
 			this._addClusterLayer( clusterData, x );
 		}
 
@@ -1016,7 +1016,7 @@ module.exports = (function() {
 	// Mapbox outputs bounds in a different format than we want
 	// to send to supercluster, so this will deal with it:
 	MapboxCluster.prototype._getBounds = function() {
-		var b = this.map.getBounds();
+		var b = this.bounds;
 		return [ b._sw.lng, b._sw.lat, b._ne.lng, b._ne.lat ];
 	};
 
@@ -1045,9 +1045,14 @@ module.exports = (function() {
 			}
 
 			// Add it to the map
-			newLayer.group.forEach(function( marker ) {
-				marker._addTo( self.map );
-			});
+			if (newLayer) {
+                newLayer.group.forEach(function( marker ) {
+				    marker._addTo( self.map );
+			     });
+            } else {
+                console.log( newLayer, z );
+                console.warn("No newLayer");
+            }
 
 		})
 
@@ -1091,6 +1096,8 @@ module.exports = (function() {
 
 		this.markers = [];
 
+        this.bounds = this.map.LngLatBounds();
+
 		if (this.locations) {
 			this.addMarkers();
 		}
@@ -1108,6 +1115,8 @@ module.exports = (function() {
 		var template = self.template;
 		var elementCallback = self.elementCallback;
 		var onClick = self.onClick;
+
+        self.bounds.extend( markerData.location );
 
 		var thisMarker = self.map.addMarker( markerData.location, markerData, template );
 		thisMarker._addTo( self.map );
@@ -1301,7 +1310,10 @@ module.exports = (function() {
 
 			m.onClick = function(callback) {
 				m.on('click', function(e) {
-					callback.apply( m, [e] );
+                    // Get element on a click, because with leaflet, it might
+                    // not exist earlier.
+                    var $el = m.getElement();
+                    callback.apply( m, [e, m, $el, data] );
 				});
 			};
 
@@ -1356,9 +1368,6 @@ module.exports = (function() {
 		},
 
 		zoomTo: function ( z, options, map ) {
-
-			console.log( z );
-
 			return map.setZoom( z );
 		},
 
@@ -1420,8 +1429,9 @@ module.exports = (function() {
 			var $el = $( m.getElement() );
 
 			m.onClick = function(callback) {
-				$el.on('click', function(e) {
-					callback.apply( m, [e] );
+                console.log( callback );
+				$el.on('click', function(e, m, $el, data) {
+					callback.apply( m, [e, m, $el, data] );
 				});
 			};
 
@@ -1547,6 +1557,14 @@ module.exports = (function() {
 	MapboxWrapper.prototype.on = function( event, cb ) {
 		return this.map.on( event, cb );
 	};
+
+    MapboxWrapper.prototype.once = function( event, cb ) {
+        return this.map.once( event, cb );
+    };
+
+    MapboxWrapper.prototype.off = function( event, cb ) {
+        return this.map.off( event, cb );
+    };
 
 	MapboxWrapper.prototype.updateConfig = function( prop, value ) {
 		this._methods.updateConfig( prop, value, this.map );
