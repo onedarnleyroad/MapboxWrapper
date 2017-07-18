@@ -1182,6 +1182,20 @@ module.exports = (function() {
 			}
 		},
 
+        _popupOptions: function( p, options ) {
+            var _m = h._getProp( 'addToMarker', options );
+            var _t = h._getProp( 'template', options );
+            var _d = h._getProp( 'data', options );
+
+            if (_t && _d) {
+                p.setHTML( _t.render( _d ) );
+            }
+
+            if (_m) {
+                _m.bindPopup( p );
+            }
+        },
+
 		getZoom: function( map ) {
 			return map.getZoom();
 		},
@@ -1281,6 +1295,10 @@ module.exports = (function() {
 
 			};
 
+            // clone / rename to have the same
+            // function as mapbox-gl
+            m.setPopup = m.bindPopup;
+
 			m.onClick = function(callback) {
 				m.on('click', function(e) {
 					callback.apply( m, [e] );
@@ -1300,8 +1318,13 @@ module.exports = (function() {
 			return m;
 		},
 
-        addPopup: function( options, map ) {
-            return L.Popup( options ).addTo( map );
+        addPopup: function( location, options ) {
+            var p = new L.Popup().setLatLng( location );
+            p.setHTML = p.setContent;
+
+            _Shared._popupOptions( p, options );
+
+            return p;
         },
 
 		// @TODO - a bit broken on bookmarks, seems to toggle
@@ -1402,6 +1425,13 @@ module.exports = (function() {
 				});
 			};
 
+            // setting the popup binds the click later,
+            // which is a bit annoying.
+            m.bindPopup = function(popup) {
+                m.setPopup( popup );
+                popup.remove();
+            };
+
 			if ( data && template ) {
 				$el.append( template.render( data ) );
 			}
@@ -1409,8 +1439,10 @@ module.exports = (function() {
 			return m;
 		},
 
-        addPopup: function( options, map ) {
-            return new mapboxgl.Popup( options ).addTo( map );
+        addPopup: function( location, options, map ) {
+            var p = new mapboxgl.Popup().addTo( map );
+            _Shared._popupOptions( p, options );
+            return p;
         },
 
 		flyTo: function( options, map ) {
@@ -1537,7 +1569,7 @@ module.exports = (function() {
         if (this.type === 'leaflet') {
              return new L.latLngBounds( sw, ne );
         } else if (this.type === 'mapbox-gl') {
-            return new L.LngLatBounds( sw, ne );
+            return new mapboxgl.LngLatBounds( sw, ne );
         }
     };
 
@@ -1548,8 +1580,8 @@ module.exports = (function() {
     };
 
 
-    MapboxWrapper.prototype.addPopup = function( options ) {
-        return this._methods.addPopup( options, this.map );
+    MapboxWrapper.prototype.addPopup = function( location, options ) {
+        return this._methods.addPopup( location, options, this.map );
     };
 
 
