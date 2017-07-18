@@ -1199,6 +1199,9 @@ module.exports = (function() {
 		},
 
 		updateConfig: function( prop, value, map ) {
+
+            var self = this;
+
 			switch (prop) {
 				case 'maxZoom':
 					map.setMaxZoom( value );
@@ -1342,7 +1345,24 @@ module.exports = (function() {
 			b._ne = b._northEast;
 
 			return b;
-		}
+		},
+
+        disableScrollZoom: function( map ) {
+            map.scrollWheelZoom.disable();
+        },
+
+        enableScrollZoom: function( map ) {
+            map.scrollWheelZoom.enable();
+        },
+
+        disableDragging: function(map) {
+            map.dragging.disable();
+        },
+
+        enableDragging: function(map) {
+            map.dragging.enable();
+        }
+
 
 	});
 
@@ -1395,7 +1415,23 @@ module.exports = (function() {
 
 		getBounds: function( map ) {
 			return map.getBounds();
-		}
+		},
+
+        disableScrollZoom: function( map ) {
+            map.scrollZoom.disable();
+        },
+
+        enableScrollZoom: function( map ) {
+            map.scrollZoom.enable();
+        },
+
+        disableDragging: function(map) {
+            map.dragPan.disable();
+        },
+
+        enableDragging: function(map) {
+            map.dragPan.enable();
+        }
 
 	});
 
@@ -1490,16 +1526,20 @@ module.exports = (function() {
 
 
 	/*======================================
-	=            Getter Methods            =
+	=            Simple Wrapper Methods            =
 	======================================*/
 
-	// Speeds up development, condenses code:
+	// Methods where the only argument is the map
 	[
 		'getMinZoom',
 		'getMaxZoom',
 		'getZoom',
 		'getCenter',
-		'getBounds'
+		'getBounds',
+        'disableScrollZoom',
+        'enableScrollZoom',
+        'disableDragging',
+        'enableDragging'
 	].forEach( function( method ) {
 		// separation of self and 'this' here,
 		// because Mapbox may use this in ways
@@ -1529,8 +1569,6 @@ module.exports = (function() {
 	MapboxWrapper.prototype.addBookmarks = function (options) {
 		return new MapboxBookmarks( this._extendOptions(options) );
 	};
-
-
 
 	return MapboxWrapper;
 })();
