@@ -210,9 +210,6 @@ module.exports = (function() {
 		},
 
 		zoomTo: function ( z, options, map ) {
-
-			console.log( z );
-
 			return map.setZoom( z );
 		},
 
