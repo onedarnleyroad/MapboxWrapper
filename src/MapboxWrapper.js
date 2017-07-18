@@ -154,6 +154,10 @@ module.exports = (function() {
 			return m;
 		},
 
+        addPopup: function( options, map ) {
+            return L.Popup( options ).addTo( map );
+        },
+
 		// @TODO - a bit broken on bookmarks, seems to toggle
 		// two positions with same args?
 		flyTo: function( options, map ) {
@@ -258,6 +262,10 @@ module.exports = (function() {
 
 			return m;
 		},
+
+        addPopup: function( options, map ) {
+            return new mapboxgl.Popup( options ).addTo( map );
+        },
 
 		flyTo: function( options, map ) {
 			return map.flyTo( options, map );
@@ -379,8 +387,28 @@ module.exports = (function() {
 	};
 
 
+    MapboxWrapper.prototype.LngLatBounds = function(sw, ne) {
+        if (this.type === 'leaflet') {
+             return new L.latLngBounds( sw, ne );
+        } else if (this.type === 'mapbox-gl') {
+            return new L.LngLatBounds( sw, ne );
+        }
+    };
+
+    // Alias of above, because it's super confusing between leaflet
+    // and gl switching. Maybe this encourages bad practice....
+    MapboxWrapper.prototype.latLngBounds = function( sw, ne ) {
+       return this.LngLatBounds( sw, ne );
+    };
+
+
+    MapboxWrapper.prototype.addPopup = function( options ) {
+        return this._methods.addPopup( options, this.map );
+    };
+
+
 	/*======================================
-	=            Simple Wrapper Methods            =
+	=            Simple Wrapper Methods    =
 	======================================*/
 
 	// Methods where the only argument is the map
@@ -402,8 +430,9 @@ module.exports = (function() {
 		MapboxWrapper.prototype[method] = function() {
 			return this._methods[method]( this.map );
 		};
-
 	});
+
+
 
 	MapboxWrapper.prototype._extendOptions = function(options) {
 		return $.extend({}, options, {
@@ -411,10 +440,15 @@ module.exports = (function() {
 		});
 	};
 
+
+
+
 	/* Bind in libraries */
 	MapboxWrapper.prototype.addMarkers = function (options) {
 		return new MapboxMarkers( this._extendOptions(options) );
 	};
+
+
 
 	MapboxWrapper.prototype.addCluster = function (options) {
 		return new MapboxCluster( this._extendOptions(options) );
