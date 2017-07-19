@@ -113,6 +113,7 @@ module.exports = (function() {
         this.onClick = h._getProp( 'onClick', options );
 		this.clusterCallback = options.clusterCallback;
 		this.template = options.template;
+        this.count = 0;
 
 
 
@@ -137,6 +138,8 @@ module.exports = (function() {
 			}
 		}
 
+        // store a count of markers.
+        this.count = self.geoJSON.length;
 
         self.geoJSON.forEach( function( point ) {
             self.bounds.extend( point.geometry.coordinates );

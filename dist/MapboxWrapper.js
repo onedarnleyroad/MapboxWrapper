@@ -774,6 +774,7 @@ module.exports = (function() {
         this.onClick = h._getProp( 'onClick', options );
 		this.clusterCallback = options.clusterCallback;
 		this.template = options.template;
+        this.count = 0;
 
 
 
@@ -798,6 +799,8 @@ module.exports = (function() {
 			}
 		}
 
+        // store a count of markers.
+        this.count = self.geoJSON.length;
 
         self.geoJSON.forEach( function( point ) {
             self.bounds.extend( point.geometry.coordinates );
@@ -1095,6 +1098,7 @@ module.exports = (function() {
 		this.addClass =  h._getProp( 'addClass', options ) ;
 
 		this.markers = [];
+        this.count = 0;
 
         this.bounds = this.map.LngLatBounds();
 
@@ -1109,41 +1113,42 @@ module.exports = (function() {
 
 		var self = this;
 
-		var thisMarker;
-
-		var addClass = self.addClass;
-		var template = self.template;
-		var elementCallback = self.elementCallback;
-		var onClick = self.onClick;
-
-        self.bounds.extend( markerData.location );
-
-		var thisMarker = self.map.addMarker( markerData.location, markerData, template );
+        // Create the marker, add to map:
+		var thisMarker = self.map.addMarker( markerData.location, markerData, self.template );
 		thisMarker._addTo( self.map );
 
+        // Extend the stored bounds
+        self.bounds.extend( thisMarker.getLngLat() );
+
+        // Get the dom element..
 		var $el = $( thisMarker.getElement() );
 
-		if ( addClass ) {
-			$el.addClass( addClass );
+        // Add a class?
+		if ( self.addClass ) {
+			$el.addClass( self.addClass );
 		}
 
-		if (typeof elementCallback === 'function') {
-			elementCallback( thisMarker, $el, markerData );
+        // Run a callback on the marker?
+		if (typeof self.elementCallback === 'function') {
+			self.elementCallback( thisMarker, $el, markerData );
 		}
 
-		if (typeof onClick === 'function') {
-			thisMarker.onClick( onClick );
+        // run a click handler on the marker?
+		if (typeof self.onClick === 'function') {
+			thisMarker.onClick( self.onClick );
 		}
 
+        // return the marker to whatever called this:
 		return thisMarker;
 
 	};
 
 	MapboxMarkers.prototype.addMarkers = function() {
-
+        // run through this.locations, plotting each one, and adding it to the big array.
 		var self = this;
 		for (var id in self.locations) {
 			self.markers.push( self.plot( self.locations[id] ) );
+            self.count = self.markers.length;
 		}
 	};
 
@@ -1160,8 +1165,6 @@ var MapboxCluster = require('./MapboxCluster');
 var h = require('./helpers');
 
 module.exports = (function() {
-
-
 
 
 	// @TODO - add these and implement them,
@@ -1397,6 +1400,19 @@ module.exports = (function() {
 
         enableDragging: function(map) {
             map.dragging.enable();
+        },
+
+        fitBounds: function(bounds, options, map) {
+
+            // Leaflet expects an x / y padding array, but gl is happy with just one number,
+            // so convert it here:
+            if (typeof options === 'object') {
+                if (options.hasOwnProperty('padding') && typeof options.padding === 'number') {
+                    options.padding = [ options.padding, options.padding ];
+                }
+            }
+
+            map.fitBounds( bounds, options );
         }
 
 
@@ -1454,6 +1470,7 @@ module.exports = (function() {
         addPopup: function( location, options, map ) {
             var p = new mapboxgl.Popup().addTo( map );
             _Shared._popupOptions( p, options );
+
             return p;
         },
 
@@ -1483,6 +1500,10 @@ module.exports = (function() {
 
         enableDragging: function(map) {
             map.dragPan.enable();
+        },
+
+        fitBounds: function(bounds, alt, map) {
+            map.fitBounds( bounds, alt );
         }
 
 	});
@@ -1521,6 +1542,11 @@ module.exports = (function() {
 		} else if (self.type === 'leaflet') {
 			self._methods = _Leaflet;
 		}
+
+        // Store all popups, just because
+        // we don't have a closeAllPopups method native to mapbox, so we
+        // can use this.
+        this.popups = [];
 
 		this.map = this._methods.map( this.options );
 
@@ -1601,7 +1627,19 @@ module.exports = (function() {
 
 
     MapboxWrapper.prototype.addPopup = function( location, options ) {
-        return this._methods.addPopup( location, options, this.map );
+        var p = this._methods.addPopup( location, options, this.map );
+        this.popups.push(p);
+        return p;
+    };
+
+    MapboxWrapper.prototype.closeAllPopups = function() {
+        this.popups.forEach(function(p) {
+            p.remove();
+        });
+    };
+
+    MapboxWrapper.prototype.fitBounds = function( bounds, alt ) {
+        this._methods.fitBounds( bounds, alt, this.map );
     };
 
 
