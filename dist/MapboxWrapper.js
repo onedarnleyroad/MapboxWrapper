@@ -1286,7 +1286,7 @@ module.exports = (function() {
 				html: html
 			});
 
-			var m = L.marker( coords.reverse(), {
+			var m = L.marker( [coords[1], coords[0] ], {
 				icon: icon
 			});
 
@@ -1351,11 +1351,15 @@ module.exports = (function() {
 
 			var centerArray;
 
+
+
 			if (Array.isArray( center )) {
-				centerArray = center.reverse();
+				centerArray = [center[1], center[0]];
 			} else {
 				centerArray = [center.lat,center.lng];
 			}
+
+            console.log( centerArray );
 
 			if (z && centerArray) {
 				map.flyTo(centerArray, z);
