@@ -7,8 +7,6 @@ var h = require('./helpers');
 module.exports = (function() {
 
 
-
-
 	// @TODO - add these and implement them,
 	// for now, 'options' below expects everything,
 	// and checks for nothing.
@@ -242,6 +240,19 @@ module.exports = (function() {
 
         enableDragging: function(map) {
             map.dragging.enable();
+        },
+
+        fitBounds: function(bounds, options, map) {
+
+            // Leaflet expects an x / y padding array, but gl is happy with just one number,
+            // so convert it here:
+            if (typeof options === 'object') {
+                if (options.hasOwnProperty('padding') && typeof options.padding === 'number') {
+                    options.padding = [ options.padding, options.padding ];
+                }
+            }
+
+            map.fitBounds( bounds, options );
         }
 
 
@@ -299,6 +310,7 @@ module.exports = (function() {
         addPopup: function( location, options, map ) {
             var p = new mapboxgl.Popup().addTo( map );
             _Shared._popupOptions( p, options );
+
             return p;
         },
 
@@ -328,6 +340,10 @@ module.exports = (function() {
 
         enableDragging: function(map) {
             map.dragPan.enable();
+        },
+
+        fitBounds: function(bounds, alt, map) {
+            map.fitBounds( bounds, alt );
         }
 
 	});
@@ -366,6 +382,11 @@ module.exports = (function() {
 		} else if (self.type === 'leaflet') {
 			self._methods = _Leaflet;
 		}
+
+        // Store all popups, just because
+        // we don't have a closeAllPopups method native to mapbox, so we
+        // can use this.
+        this.popups = [];
 
 		this.map = this._methods.map( this.options );
 
@@ -446,7 +467,19 @@ module.exports = (function() {
 
 
     MapboxWrapper.prototype.addPopup = function( location, options ) {
-        return this._methods.addPopup( location, options, this.map );
+        var p = this._methods.addPopup( location, options, this.map );
+        this.popups.push(p);
+        return p;
+    };
+
+    MapboxWrapper.prototype.closeAllPopups = function() {
+        this.popups.forEach(function(p) {
+            p.remove();
+        });
+    };
+
+    MapboxWrapper.prototype.fitBounds = function( bounds, alt ) {
+        this._methods.fitBounds( bounds, alt, this.map );
     };
 
 
