@@ -191,15 +191,11 @@ module.exports = (function() {
 
 			var centerArray;
 
-
-
 			if (Array.isArray( center )) {
 				centerArray = [center[1], center[0]];
 			} else {
 				centerArray = [center.lat,center.lng];
 			}
-
-            console.log( centerArray );
 
 			if (z && centerArray) {
 				map.flyTo(centerArray, z);
