@@ -323,7 +323,7 @@ module.exports = (function() {
 				thisMarker.onClick( function(e) {
 					e.preventDefault();
 					e.stopPropagation();
-					callback( e, thisMarker, $el, feature.properties );
+					callback( e, thisMarker, $el, feature.properties, self );
 				});
 			}
 
