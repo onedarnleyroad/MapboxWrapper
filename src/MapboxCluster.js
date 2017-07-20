@@ -4,6 +4,18 @@ var supercluster = require('supercluster');
 
 module.exports = (function() {
 
+
+    var _uid = (function() {
+
+        var uid = 0;
+
+        return function() {
+            uid++;
+            return uid;
+        };
+
+    })();
+
 	// EXPECTS A MapboxWrapper object
 	// and NOT a mapbox-gl object.
 
@@ -59,36 +71,6 @@ module.exports = (function() {
 		locations: false
 	};
 
-	// helper function
-	var _locationsToGeoJson = function( locations, type ) {
-
-		var geoJSON = [];
-
-		var _process = function( data ) {
-
-			var thisObj = {
-				type: 'Feature',
-				properties: data,
-				geometry: { type: "Point", "coordinates": data.location }
-			};
-
-			geoJSON.push( thisObj );
-		};
-
-		if (Array.isArray( location ) ) {
-			locations.forEach( _process );
-		} else {
-			for (var prop in locations ) {
-				if ( !locations.hasOwnProperty( prop ) ) {
-					return;
-				} else {
-					_process( locations[ prop ] );
-				}
-			}
-		}
-
-		return geoJSON;
-	};
 
 
 	// Main constructor
@@ -99,6 +81,8 @@ module.exports = (function() {
 
 		// Create defaults, setup object variables
 		var options = $.extend({}, defaults, _options);
+
+        this._options = options;
 
 		if (!options.map) {
 			console.error("MapboxWrapper instance must be provided");
@@ -115,7 +99,7 @@ module.exports = (function() {
 		this.template = options.template;
         this.count = 0;
 
-
+        this.markers = {};
 
 		this.clusterTpl = options.clusterTpl;
 		this.map = options.map;
@@ -123,92 +107,218 @@ module.exports = (function() {
 		// Setup other properties:
 		self.layers = {};
 		self.activeLayers = [];
-		self.allLayers = false;
+        this.geoJSON = [];
+
+        self.allLayers = false;
 		self.zoom = false;
 		self.bounds = this.map.LngLatBounds();
 
 		// Prepare location data, and load the cluster
 		if (options.locations) {
 			self.locations = options.locations
-			self.geoJSON = _locationsToGeoJson( options.locations );
+            self.addLocations( options.locations );
 		} else {
-			self.geoJSON = options.geoJSON;
-			if (!self.geoJSON) {
-				console.error("No geoJSON or locations provided");
-			}
-		}
+            self.locations = [];
+        }
 
-        // store a count of markers.
-        this.count = self.geoJSON.length;
-
-        self.geoJSON.forEach( function( point ) {
-            self.bounds.extend( point.geometry.coordinates );
+        self.map.on('zoom', function() {
+            self._check();
         });
 
-		// SPINUP:
-		//
-
-		if ( this.map.type === 'leaflet' ) {
-			self._plotLeafletLayers();
-		} else {
-
-			// create supercluster
-			self.index = supercluster({
-				radius: options.radius,
-				maxZoom: options.maxZoom
-			});
-
-			// load in data points to supercluster
-			self.clusters = self.index.load( self.geoJSON );
-
-			// plot these
-			self._plotLayers();
-
-			// Listen to zoom event to change layers,
-			// remember that the callback's 'this' is mapbox
-			// nto this constructor.
-			self.map.on('zoom', function() {
-				self._check()
-			});
-			self._check();
-		}
-
+        // Paint!
+        self._plotLayers();
 
 
 		return self;
 	};
 
+    MapboxCluster.prototype.addLocations = function( locations, repaint ) {
 
-	MapboxCluster.prototype._plotLeafletLayers = function () {
 
-		var self = this;
+        var self = this;
 
-		if (self.map.type != 'leaflet') {
-			console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
-		}
+        var _process = function( data ) {
 
-		// create L cluster:
-		self.leafletClusters = new L.MarkerClusterGroup({
-			spiderfyOnMaxZoom: false,
-			showCoverageOnHover: false
-		});
+            var id = _uid();
+            var location = data.location;
 
-		self.geoJSON.forEach( function( point ) {
+            // Push to GeoJSON
+            var thisObj = {
+                type: 'Feature',
+                properties: { id: id },
+                geometry: { type: "Point", "coordinates": location }
+            };
 
-			var marker = self.map.addMarker( point.geometry.coordinates, point.properties, self.template  );
+            self.geoJSON.push( thisObj );
 
-			self.leafletClusters.addLayer( marker );
+            var thisMarker = self.map.addMarker( location, data, self.template );
 
+            // save id on the marker object:
+            thisMarker.__id = id;
+
+            // save to our global markers object so we can find it later:
+            self.markers[ id ] = thisMarker;
+
+            // Set up marker callback
             if (typeof self.onClick === 'function') {
-                marker.onClick( self.onClick );
+                thisMarker.onClick( function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    self.onClick( e, thisMarker, $el, data, self );
+                });
             }
-
-		});
-
-		self.leafletClusters.addTo( self.map.map );
+        };
 
 
-	};
+        // Loop through
+        if (Array.isArray( locations ) ) {
+            locations.forEach( _process );
+        } else {
+            for (var prop in locations ) {
+                if ( !locations.hasOwnProperty( prop ) ) {
+                    return;
+                } else {
+                    _process( locations[ prop ] );
+                }
+            }
+        }
+
+
+        // Default repaint to true for this fucntion
+        if (typeof repaint === 'undefined') {
+            repaint = true;
+        }
+
+        if (repaint) {
+            self._createLayers();
+        }
+    };
+
+    MapboxCluster.prototype.removeMarker = function( marker, repaint ) {
+        var self = this;
+
+
+
+        var __id = marker.__id;
+
+
+        // Find i from geo
+        var geoIndex;
+        self.geoJSON.forEach( function(a, i) {
+            if (a.properties.id === __id ) {
+                geoIndex = i;
+            }
+        });
+
+        if (typeof === 'number') {
+            self.geoJSON = self.geoJSON.splice( geoIndex, 1 );
+        }
+
+        // Remove from a map
+        marker.remove();
+
+        // Re calculate the clusters?
+        // we can't remove a point from a cluster index, see:
+        // https://github.com/mapbox/supercluster/issues/19
+        // So until they resolve the above we have to rebuild - it should be avoided
+        // to remove clusters.
+        //
+        // The idea behind repaint is we might want to loop through, remove a lot of markers and
+        // only repaint on the last marker, since clusters may change or flash, eg filtered data
+        // points.
+        if (repaint) {
+            self._createLayers();
+        }
+
+    };
+
+    MapboxCluster.prototype.removeMarkers = function( repaint ) {
+        var self = this;
+        self.geoJSON = [];
+        self.markers.forEach( function( m ) {
+            m.remove();
+            delete m;
+        });
+
+        // Empty the markers
+        self.markers = {};
+
+
+        // Would effectively kill the clusters, but probably
+        // isn't worth calling - you'd be using this in conjunction with replaceMarkers
+        if (repaint) {
+            self._createLayers();
+        }
+    };
+
+
+    MapboxCluster.prototype.replaceMarkers = function( locations, repaint ) {
+        this.removeMarkers();
+
+        // Default this to true
+        if (typeof repaint === 'undefined') {
+            repaint = true;
+        }
+
+        this.addLocations( locations, repaint );
+    };
+
+
+
+    MapboxCluster.prototype._createLayers = function() {
+        var self = this;
+
+        // Create new cluster
+        self.index = supercluster({
+            radius: self._options.radius,
+            maxZoom: self._options.maxZoom
+        });
+
+        self.count = self.geoJSON.length;
+        self.clusters = self.index.load( self.geoJSON );
+
+        self._plotLayers();
+
+        self._check();
+
+    };
+
+
+
+
+
+
+
+	// MapboxCluster.prototype._plotLeafletLayers = function () {
+
+	// 	var self = this;
+
+	// 	if (self.map.type != 'leaflet') {
+	// 		console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
+	// 	}
+
+	// 	// create L cluster:
+	// 	self.leafletClusters = new L.MarkerClusterGroup({
+	// 		spiderfyOnMaxZoom: false,
+	// 		showCoverageOnHover: false
+	// 	});
+
+	// 	self.geoJSON.forEach( function( point ) {
+
+	// 		var marker = self.map.addMarker( point.geometry.coordinates, point.properties, self.template  );
+
+	// 		self.leafletClusters.addLayer( marker );
+
+ //            if (typeof self.onClick === 'function') {
+ //                marker.onClick( self.onClick );
+ //            }
+
+	// 	});
+
+	// 	self.leafletClusters.addTo( self.map.map );
+
+
+	// };
 
 	MapboxCluster.prototype._check = function() {
 
@@ -284,6 +394,9 @@ module.exports = (function() {
 	};
 
 
+
+
+    // RENAME to ArrangeLayers?
 	MapboxCluster.prototype._addClusterLayer = function( data, z ) {
 
 		var group = [], $els;
@@ -294,6 +407,21 @@ module.exports = (function() {
 			return;
 		}
 
+
+        // REFACTOR:
+        //
+        // 1. Plot all markers.
+        //
+        // 2. Convert them to geoJSON features with IDs to match markers.
+        //
+        //
+        // 3. Create index, removing old one if present
+        //
+        // 4. Clear old cluster markers
+        // 5. Plot clusters, and group existing layers.
+        //      5.1 if not cluster, take ID from point and move in MARKER OBJECT into this layer group.
+        // 6. switchLayer works as before
+
 		// This will always reset a zoom layer
 		data.forEach(function( feature ) {
 
@@ -302,21 +430,35 @@ module.exports = (function() {
 			if ( feature.properties.hasOwnProperty('cluster') && feature.properties.cluster ) {
 				template = self.clusterTpl;
 				callback = self.clusterCallback;
+                var isMarker = false;
 			} else {
 				template = self.template;
 				callback = self.onClick;
+                var isMarker = true;
 			}
 
 			var thisMarker = self.map.addMarker( feature.geometry.coordinates, feature.properties, template );
 
+
+
 			// Save Z values to understand which layer they sit on:
 			thisMarker.__z = z;
 			feature.properties.__z = z;
+            thisMarker.__id = _uid();
+
+            if ( isMarker ) {
+                self.markers[ thisMarker.__id ] = thisMarker;
+            }
+
+
 
 
 			var $el = $( thisMarker.getElement() );
 			$el.addClass('mapLocation');
 			$el.addClass('zoom-' + z).addClass('zoom-' + z).addClass('zoom-layer');
+
+
+
 
 
 			if (typeof callback === 'function') {
