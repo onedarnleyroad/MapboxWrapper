@@ -1171,8 +1171,10 @@ module.exports = (function() {
 
                 if (typeof self.clusterCallback === 'function') {
                     thisMarker.onClick( function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
+                        if (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
                         self.clusterCallback( e, thisMarker, $el, feature.properties, self );
                     });
                 }
