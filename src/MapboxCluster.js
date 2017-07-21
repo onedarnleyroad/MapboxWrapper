@@ -303,6 +303,10 @@ module.exports = (function() {
             console.log("Before, no index set" );
         }
 
+        if (self.map.type === "leaflet") {
+            return self._createLeafletLayers();
+        }
+
         // Create new cluster
         self.index = supercluster({
             radius: self._options.radius,
@@ -326,45 +330,43 @@ module.exports = (function() {
     };
 
 
+	MapboxCluster.prototype._createLeafletLayers = function () {
+
+		var self = this;
+
+		if (self.map.type != 'leaflet') {
+			console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
+		}
+
+        if (self.leafletClusters) {
+            self.leafletClusters.remove();
+            console.log( self.leafletClusters );
+        }
+
+		// create L cluster:
+		self.leafletClusters = new L.MarkerClusterGroup({
+			spiderfyOnMaxZoom: false,
+			showCoverageOnHover: false
+		});
+
+		for ( var id in self.markers ) {
+            if (self.markers.hasOwnProperty( id ) ) {
+                var m = self.markers[ id ];
+                m._remove();
+                self.leafletClusters.addLayer( m );
+            }
+        };
+
+		self.leafletClusters.addTo( self.map.map );
 
 
-
-
-
-	// MapboxCluster.prototype._plotLeafletLayers = function () {
-
-	// 	var self = this;
-
-	// 	if (self.map.type != 'leaflet') {
-	// 		console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
-	// 	}
-
-	// 	// create L cluster:
-	// 	self.leafletClusters = new L.MarkerClusterGroup({
-	// 		spiderfyOnMaxZoom: false,
-	// 		showCoverageOnHover: false
-	// 	});
-
-	// 	self.geoJSON.forEach( function( point ) {
-
-	// 		var marker = self.map.addMarker( point.geometry.coordinates, point.properties, self.template  );
-
-	// 		self.leafletClusters.addLayer( marker );
-
- //            if (typeof self.onClick === 'function') {
- //                marker.onClick( self.onClick );
- //            }
-
-	// 	});
-
-	// 	self.leafletClusters.addTo( self.map.map );
-
-
-	// };
+	};
 
 	MapboxCluster.prototype._check = function( force ) {
 
-		var _z = this.map.getZoom();
+        if (this.map.type === 'leaflet') { return; }
+
+        var _z = this.map.getZoom();
 		var z = this._getSteppedZoom( _z );
 
 		if ( z != this.zoom || force ) {
