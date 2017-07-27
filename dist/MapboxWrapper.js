@@ -553,14 +553,14 @@ module.exports = (function() {
 
 
 	var MapboxBookmarks = function( options ) {
-		this.map = h_getProp('map', options );
-        this.animSpeed = h_getProp('animSpeed', options );
+		this.map = h._getProp('map', options );
+        this.animSpeed = h._getProp('animSpeed', options );
 
         if (!this.animSpeed) {
             this.animSpeed = 4000;
         };
 
-        this.mobileCheck = h_getProp('animSpeed', options );
+        this.mobileCheck = h._getProp('animSpeed', options );
 
         if (typeof this.mobileCheck != "function") {
             this.mobileCheck = function() {
