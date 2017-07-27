@@ -8,7 +8,7 @@ module.exports = (function() {
         this.animSpeed = h._getProp('animSpeed', options );
 
         if (!this.animSpeed) {
-            this.animSpeed = 4000;
+            this.animSpeed = 1;
         };
 
         this.mobileCheck = h._getProp('animSpeed', options );
