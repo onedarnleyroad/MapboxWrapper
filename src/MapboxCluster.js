@@ -298,9 +298,9 @@ module.exports = (function() {
         var self = this;
 
         if (self.index) {
-            console.log("Before:", self.index );
+            // console.log("Before:", self.index );
         } else {
-            console.log("Before, no index set" );
+            // console.log("Before, no index set" );
         }
 
         if (self.map.type === "leaflet") {
@@ -313,7 +313,7 @@ module.exports = (function() {
             maxZoom: self._options.maxZoom
         });
 
-        console.log("After:", self.index );
+        // console.log("After:", self.index );
 
         // Register the length
         self.count = self.geoJSON.length;
@@ -340,7 +340,6 @@ module.exports = (function() {
 
         if (self.leafletClusters) {
             self.leafletClusters.remove();
-            console.log( self.leafletClusters );
         }
 
 		// create L cluster:
@@ -612,8 +611,8 @@ module.exports = (function() {
 				    marker._addTo( self.map );
 			     });
             } else {
-                console.log( newLayer, z );
-                console.warn("No newLayer");
+                // console.log( newLayer, z );
+                console.warn("No newLayer for " + z);
             }
 
 		})
