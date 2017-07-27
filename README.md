@@ -381,4 +381,4 @@ Dist should be built with the repo, but build it yourself with
 
 ## Use as a module:
 
-In theory should just work with `require('mapboxwrapper')` but I haven't tested this ¯\\_(ツ)_/¯
+In theory should just work with `require('mapboxwrapper')` but I haven't tested this ¯\\\_(ツ)\_/¯
