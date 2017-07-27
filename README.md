@@ -109,6 +109,9 @@ Add a set of markers en masse. If you want to use clustering, do not use this, u
 var markers = wrapper.addMarkers( options );
 ```
 
+The markers object is simplistic, and does not work in quite as an advanced way as the clusters object. in the example above the returned `markers` object will have a couple of methods for adding markers and plotting, but they're not very useful because they don't update the internal marker store. If you need to keep adding and removing markers dynamically, but you _don't_ want clustering, then this function needs a little bit of work.
+
+
 ## Options:
 
 
@@ -169,7 +172,7 @@ Like markers, this handles clustering (using supercluster or L.markerClusters)
 
 
 ```
-wrapper.addClusters(options)
+var myClusters = wrapper.addClusters(options);
 ```
 
 ## Options:
@@ -232,6 +235,42 @@ As above, a template is passed only this is only passed an object like so: `opti
 	}
 }
 ```
+
+## Methods:
+
+Calling the cluster function from the wrapper, will return an instance of the cluster function with various methods:
+
+```
+var clusters = wrapper.addClusters(options);
+```
+
+
+### `clusters.addLocations( locations, repaint )`
+
+Pass in an object just like when you initialise (i.e. the same format as `options.locations`) and this new list will be added. If `repaint` is true, which it is by default, then it will replot everything. Generally you should leave this as `true` because otherwise you're going to get some unexpected behaviour
+
+
+### `clusters.removeMarker( marker, repaint )`
+
+Remove a marker. `marker` should be a marker object that was created by initialisation or addLocations, as this function will expect certain methods
+and properties to be available.
+
+### `clusters.removeMarkers( repaint )`
+
+Remove ALL markers, at once. `repaint` is not true by default, because usually you would most likely want to subsequently call `clusters.addLocations` afterwards, and there's no point trying to repaint when the second function is going to repaint again. Adding and removing clusters is kind of expensive, but there's not really any way around this. Supercluster does not have any methods for adding or removing to its index so new markers always means a rebuild.
+
+### `clusters.replaceMarkers( locations, repaint )`
+
+This is more likely to be used than the last three functions, as usually you are changing a view or a list of markers. It removes markers, and then adds a new set. It is the same as doing this:
+
+```
+clusters.removeMarkers();
+clusters.addLocations( locations, repaint );
+```
+
+It's worth noting that it also removes the `.mapLocation--ready` class, which is then added after a repaint, you can use this to do some styling of transitions, though since it's all a bit unpredictable with timings and map plotting, so far I've not had great results with this, it's probably better to not transition between marker swaps, and just flip as this creates an illusion of fast loading.
+
+
 
 
 # Bookmarks
