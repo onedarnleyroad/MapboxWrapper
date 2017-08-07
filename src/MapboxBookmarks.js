@@ -34,6 +34,7 @@ module.exports = (function() {
 			// the code here, and allows us to add properties quickly to this array
 			// as we think of them.
 			[
+                'type',
 				'location',
 				'locationMobile',
 				'zoom',
@@ -43,8 +44,19 @@ module.exports = (function() {
 				b[prop] = h._getProp( prop, bookmark );
 			});
 
+            if (typeof b.bounds === 'array') {
 
-			if (typeof b.zoomBy === "number") {
+                var b._bounds = new self.map.latLngBounds();
+
+                b.bounds.forEach(function( _b ) {
+                    b._bounds.extend( _b );
+                });
+
+                b.goto = function() {
+                    self.map.fitBounds( b._bounds );
+                };
+
+            } else if (typeof b.zoomBy === "number") {
 				b.goto = function() {
 					var z = self.map.getZoom();
 					var minZ = self.map.getMinZoom();
