@@ -588,7 +588,9 @@ module.exports = (function() {
 				'locationMobile',
 				'zoom',
 				'zoomMobile',
-				'zoomBy'
+				'zoomBy',
+                'bounds',
+                'padding'
 			].forEach(function( prop ) {
 				b[prop] = h._getProp( prop, bookmark );
 			});
@@ -596,7 +598,7 @@ module.exports = (function() {
             if (typeof b.bounds === 'object') {
 
                 if (Array.isArray( b.bounds ) ) {
-                    b._bounds = new self.map.latLngBounds();
+                    b._bounds = self.map.LngLatBounds();
                     b.bounds.forEach(function( _b ) {
                         b._bounds.extend( _b );
                     });
@@ -607,7 +609,14 @@ module.exports = (function() {
 
 
                 b.goto = function() {
-                    self.map.fitBounds( b._bounds );
+
+                    var _opts = {};
+
+                    if ( b.padding ) {
+                        _opts.padding = b.padding;
+                    }
+
+                    self.map.fitBounds( b._bounds, _opts );
                 };
 
             } else if (typeof b.zoomBy === "number") {
