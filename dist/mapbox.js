@@ -13271,29 +13271,33 @@ module.exports = Array.isArray || function (arr) {
 
 },{}],4:[function(require,module,exports){
 module.exports={
-  "_from": "mapbox.js",
+  "_args": [
+    [
+      "mapbox.js@3.1.1",
+      "/Users/Edwards/dev/onedarnleyroad/MapboxWrapper"
+    ]
+  ],
+  "_from": "mapbox.js@3.1.1",
   "_id": "mapbox.js@3.1.1",
   "_inBundle": false,
   "_integrity": "sha1-Tr5BvYm1M/UH+zRV9PSQ5BfqHo8=",
   "_location": "/mapbox.js",
   "_phantomChildren": {},
   "_requested": {
-    "type": "tag",
+    "type": "version",
     "registry": true,
-    "raw": "mapbox.js",
+    "raw": "mapbox.js@3.1.1",
     "name": "mapbox.js",
     "escapedName": "mapbox.js",
-    "rawSpec": "",
+    "rawSpec": "3.1.1",
     "saveSpec": null,
-    "fetchSpec": "latest"
+    "fetchSpec": "3.1.1"
   },
   "_requiredBy": [
-    "#USER",
     "/"
   ],
   "_resolved": "https://registry.npmjs.org/mapbox.js/-/mapbox.js-3.1.1.tgz",
-  "_shasum": "4ebe41bd89b533f507fb3455f4f490e417ea1e8f",
-  "_spec": "mapbox.js",
+  "_spec": "3.1.1",
   "_where": "/Users/Edwards/dev/onedarnleyroad/MapboxWrapper",
   "author": {
     "name": "Mapbox"
@@ -13301,7 +13305,6 @@ module.exports={
   "bugs": {
     "url": "https://github.com/mapbox/mapbox.js/issues"
   },
-  "bundleDependencies": false,
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
@@ -13314,7 +13317,6 @@ module.exports={
     "mustache": "2.2.1",
     "sanitize-caja": "0.1.4"
   },
-  "deprecated": false,
   "description": "mapbox javascript api",
   "devDependencies": {
     "browserify": "^13.0.0",

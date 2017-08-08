@@ -44,13 +44,18 @@ module.exports = (function() {
 				b[prop] = h._getProp( prop, bookmark );
 			});
 
-            if (typeof b.bounds === 'array') {
+            if (typeof b.bounds === 'object') {
 
-                var b._bounds = new self.map.latLngBounds();
+                if (Array.isArray( b.bounds ) ) {
+                    b._bounds = new self.map.latLngBounds();
+                    b.bounds.forEach(function( _b ) {
+                        b._bounds.extend( _b );
+                    });
+                } else {
+                    // If object, assume it's a latlong instance.
+                    b._bounds = b.bounds;
+                }
 
-                b.bounds.forEach(function( _b ) {
-                    b._bounds.extend( _b );
-                });
 
                 b.goto = function() {
                     self.map.fitBounds( b._bounds );
