@@ -369,7 +369,6 @@ module.exports = (function() {
 		var z = this._getSteppedZoom( _z );
 
 		if ( z != this.zoom || force ) {
-            if (force) { console.log( "forcing repaint"); }
 			this.zoom = z;
 			this.switchLayer( z );
 		}
@@ -475,7 +474,7 @@ module.exports = (function() {
 
             var clusterData = this.index.getClusters( this._getBounds(), x );
             var result = this._addClusterLayer( clusterData, x );
-            console.log( result );
+            // console.log( result );
         }
 
         console.timeEnd( tLabel );
