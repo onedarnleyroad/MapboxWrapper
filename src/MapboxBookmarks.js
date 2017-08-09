@@ -41,7 +41,7 @@ module.exports = (function() {
 				'zoomMobile',
 				'zoomBy',
                 'bounds',
-                'padding'
+                'options'
 			].forEach(function( prop ) {
 				b[prop] = h._getProp( prop, bookmark );
 			});
@@ -58,16 +58,8 @@ module.exports = (function() {
                     b._bounds = b.bounds;
                 }
 
-
                 b.goto = function() {
-
-                    var _opts = {};
-
-                    if ( b.padding ) {
-                        _opts.padding = b.padding;
-                    }
-
-                    self.map.fitBounds( b._bounds, _opts );
+                    self.map.fitBounds( b._bounds, b.options );
                 };
 
             } else if (typeof b.zoomBy === "number") {
