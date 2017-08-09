@@ -590,7 +590,7 @@ module.exports = (function() {
 				'zoomMobile',
 				'zoomBy',
                 'bounds',
-                'padding'
+                'options'
 			].forEach(function( prop ) {
 				b[prop] = h._getProp( prop, bookmark );
 			});
@@ -607,16 +607,8 @@ module.exports = (function() {
                     b._bounds = b.bounds;
                 }
 
-
                 b.goto = function() {
-
-                    var _opts = {};
-
-                    if ( b.padding ) {
-                        _opts.padding = b.padding;
-                    }
-
-                    self.map.fitBounds( b._bounds, _opts );
+                    self.map.fitBounds( b._bounds, b.options );
                 };
 
             } else if (typeof b.zoomBy === "number") {
@@ -1056,7 +1048,6 @@ module.exports = (function() {
 		var z = this._getSteppedZoom( _z );
 
 		if ( z != this.zoom || force ) {
-            if (force) { console.log( "forcing repaint"); }
 			this.zoom = z;
 			this.switchLayer( z );
 		}
@@ -1162,7 +1153,7 @@ module.exports = (function() {
 
             var clusterData = this.index.getClusters( this._getBounds(), x );
             var result = this._addClusterLayer( clusterData, x );
-            console.log( result );
+            // console.log( result );
         }
 
         console.timeEnd( tLabel );
