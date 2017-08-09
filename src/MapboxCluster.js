@@ -126,10 +126,6 @@ module.exports = (function() {
             self._check();
         });
 
-        // Paint!
-        self._plotLayers();
-
-
 		return self;
 	};
 
@@ -142,7 +138,7 @@ module.exports = (function() {
         // return [ b._sw.lng, b._sw.lat, b._ne.lng, b._ne.lat ];
     };
 
-    MapboxCluster.prototype.addLocations = function( locations, repaint ) {
+    MapboxCluster.prototype.addLocations = function( locations, callback, repaint ) {
 
          // Default this to true
         if (typeof repaint === 'undefined') {
@@ -155,78 +151,74 @@ module.exports = (function() {
 
         var self = this;
 
-        requestAnimationFrame( function() {
+        var _process = function( data ) {
 
-            var _process = function( data ) {
+            if ( !data ) { return; }
 
-                if ( !data ) { return; }
+            var id = _uid();
+            var location = data.location;
 
-                var id = _uid();
-                var location = data.location;
-
-                // Push to GeoJSON
-                var thisObj = {
-                    type: 'Feature',
-                    properties: { id: id },
-                    geometry: { type: "Point", "coordinates": location }
-                };
-
-                self.bounds.extend( location );
-
-                self.geoJSON.push( thisObj );
-
-                var thisMarker = self.map.addMarker( location, data, self.template );
-
-                // save id on the marker object:
-                thisMarker.__id = id;
-
-                // Add class to the element
-                var $el = $( thisMarker.getElement() );
-                $el.addClass('mapLocation');
-
-                // save to our global markers object so we can find it later:
-                self.markers[ id ] = thisMarker;
-
-                // Set up marker callback
-                if (typeof self.onClick === 'function') {
-                    thisMarker.onClick( function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        self.onClick( e, thisMarker, $el, data, self );
-                    });
-                }
-
-                // Remove this marker from the map, it'll be added when it needs to be when the _check happens
-                thisMarker._remove();
+            // Push to GeoJSON
+            var thisObj = {
+                type: 'Feature',
+                properties: { id: id },
+                geometry: { type: "Point", "coordinates": location }
             };
 
+            self.bounds.extend( location );
 
-            // Loop through
-            if (Array.isArray( locations ) ) {
-                locations.forEach( _process );
-            } else {
-                for (var prop in locations ) {
-                    if ( !locations.hasOwnProperty( prop ) ) {
-                        return;
-                    } else {
+            self.geoJSON.push( thisObj );
 
-                        _process( locations[ prop ] );
-                    }
+            var thisMarker = self.map.addMarker( location, data, self.template );
+
+            // save id on the marker object:
+            thisMarker.__id = id;
+
+            // Add class to the element
+            var $el = $( thisMarker.getElement() );
+            $el.addClass('mapLocation');
+
+            // save to our global markers object so we can find it later:
+            self.markers[ id ] = thisMarker;
+
+            // Set up marker callback
+            if (typeof self.onClick === 'function') {
+                thisMarker.onClick( function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    self.onClick( e, thisMarker, $el, data, self );
+                });
+            }
+
+            // Remove this marker from the map, it'll be added when it needs to be when the _check happens
+            thisMarker._remove();
+        };
+
+
+        // Loop through
+        if (Array.isArray( locations ) ) {
+            locations.forEach( _process );
+        } else {
+            for (var prop in locations ) {
+                if ( !locations.hasOwnProperty( prop ) ) {
+                    return;
+                } else {
+
+                    _process( locations[ prop ] );
                 }
             }
+        }
 
-            if (repaint) {
-                self._createLayers();
-            }
-
-        });
+        if (repaint) {
+            self._createLayers( callback );
+        }
     };
 
 
 
 
 
-    MapboxCluster.prototype._createLayers = function() {
+    MapboxCluster.prototype._createLayers = function( callback ) {
         var self = this;
 
         if (self.index) {
@@ -257,7 +249,7 @@ module.exports = (function() {
         self.clusters = self.index.load( self.geoJSON );
 
         // Plot layers
-        self._plotLayers();
+        self._plotLayers( callback );
 
         // Perform a zoom check and add / remove markers as necessary.
         // Pass true to create a repaint
@@ -345,7 +337,7 @@ module.exports = (function() {
 
     // Take the clusters for each zoom level,
     // and add the layer.
-    MapboxCluster.prototype._plotLayers = function() {
+    MapboxCluster.prototype._plotLayers = function( callback ) {
 
         // Kill layers:
         this.layers = {};
@@ -376,6 +368,7 @@ module.exports = (function() {
 
         var tLabel = 'Plotting Layers';
         console.time( tLabel );
+
         for ( x=1; x<=this.maxZoom; x=x+this.step ) {
 
             var clusterData = this.index.getClusters( this._getBounds(), x );
@@ -384,6 +377,10 @@ module.exports = (function() {
         }
 
         console.timeEnd( tLabel );
+
+        if (typeof callback === 'function') {
+            callback( self );
+        }
     };
 
     // Take a cluster layer and add it to the map.
@@ -590,7 +587,7 @@ module.exports = (function() {
     };
 
 
-    MapboxCluster.prototype.replaceMarkers = function( locations, repaint ) {
+    MapboxCluster.prototype.replaceMarkers = function( locations, callback, repaint ) {
         // Default this to true
         if (typeof repaint === 'undefined') {
             repaint = true;
@@ -605,7 +602,7 @@ module.exports = (function() {
         requestAnimationFrame( function() {
 
             self.removeMarkers();
-            self.addLocations( locations, repaint );
+            self.addLocations( locations, callback, repaint );
 
         });
     };
