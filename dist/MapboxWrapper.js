@@ -812,6 +812,15 @@ module.exports = (function() {
 		return self;
 	};
 
+    // Mapbox outputs bounds in a different format than we want
+    // to send to supercluster, so this will deal with it:
+    MapboxCluster.prototype._getBounds = function() {
+
+        // Always the world, anything else was causing problems
+        return [ -180, -90, 180, 90 ];
+        // return [ b._sw.lng, b._sw.lat, b._ne.lng, b._ne.lat ];
+    };
+
     MapboxCluster.prototype.addLocations = function( locations, repaint ) {
 
          // Default this to true
@@ -827,8 +836,9 @@ module.exports = (function() {
 
         requestAnimationFrame( function() {
 
-
             var _process = function( data ) {
+
+                if ( !data ) { return; }
 
                 var id = _uid();
                 var location = data.location;
@@ -878,6 +888,7 @@ module.exports = (function() {
                     if ( !locations.hasOwnProperty( prop ) ) {
                         return;
                     } else {
+
                         _process( locations[ prop ] );
                     }
                 }
@@ -890,86 +901,7 @@ module.exports = (function() {
         });
     };
 
-    MapboxCluster.prototype.removeMarker = function( marker, repaint ) {
-        var self = this;
-        var __id = marker.__id;
 
-        // Find i from geo
-        var geoIndex;
-        self.geoJSON.forEach( function(a, i) {
-            if (a.properties.id === __id ) {
-                geoIndex = i;
-            }
-        });
-
-        if (typeof geoIndex === 'number') {
-            self.geoJSON = self.geoJSON.splice( geoIndex, 1 );
-        }
-
-        // Remove from a map
-        marker._remove();
-
-        delete self.markers[ __id ];
-
-        // Re calculate the clusters?
-        // we can't remove a point from a cluster index, see:
-        // https://github.com/mapbox/supercluster/issues/19
-        // So until they resolve the above we have to rebuild - it should be avoided
-        // to remove clusters.
-        //
-        // The idea behind repaint is we might want to loop through, remove a lot of markers and
-        // only repaint on the last marker, since clusters may change or flash, eg filtered data
-        // points.
-        if (repaint) {
-            self._createLayers();
-        }
-
-    };
-
-    MapboxCluster.prototype.removeMarkers = function( repaint ) {
-        var self = this;
-        self.geoJSON = [];
-        for ( var id in self.markers ) {
-            if (self.markers.hasOwnProperty( id ) ) {
-                var m = self.markers[ id ];
-                m._remove();
-                delete m;
-            }
-        };
-
-        // Empty the markers
-        self.markers = {};
-
-        // Reset the bounds
-        self.bounds = this.map.LngLatBounds();
-
-        // Would effectively kill the clusters, but probably
-        // isn't worth calling - you'd be using this in conjunction with replaceMarkers
-        if (repaint) {
-            self._createLayers();
-        }
-    };
-
-
-    MapboxCluster.prototype.replaceMarkers = function( locations, repaint ) {
-        // Default this to true
-        if (typeof repaint === 'undefined') {
-            repaint = true;
-        }
-
-        if (repaint) {
-            $('#' + this.map.container.id + ' .mapLocation').removeClass('mapLocation--ready');
-        }
-
-        var self = this;
-
-        requestAnimationFrame( function() {
-
-            self.removeMarkers();
-            self.addLocations( locations, repaint );
-
-        });
-    };
 
 
 
@@ -989,8 +921,11 @@ module.exports = (function() {
         // Create new cluster
         self.index = supercluster({
             radius: self._options.radius,
-            maxZoom: self._options.maxZoom
+            maxZoom: self._options.maxZoom,
+            minZoom: self._options.minZoom
         });
+
+        self.actualMaxZoom = 0;
 
         // console.log("After:", self.index );
 
@@ -1009,36 +944,7 @@ module.exports = (function() {
     };
 
 
-	MapboxCluster.prototype._createLeafletLayers = function () {
 
-		var self = this;
-
-		if (self.map.type != 'leaflet') {
-			console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
-		}
-
-        if (self.leafletClusters) {
-            self.leafletClusters.remove();
-        }
-
-		// create L cluster:
-		self.leafletClusters = new L.MarkerClusterGroup({
-			spiderfyOnMaxZoom: false,
-			showCoverageOnHover: false
-		});
-
-		for ( var id in self.markers ) {
-            if (self.markers.hasOwnProperty( id ) ) {
-                var m = self.markers[ id ];
-                m._remove();
-                self.leafletClusters.addLayer( m );
-            }
-        };
-
-		self.leafletClusters.addTo( self.map.map );
-
-
-	};
 
 	MapboxCluster.prototype._check = function( force ) {
 
@@ -1165,16 +1071,13 @@ module.exports = (function() {
 		var group = [], $els;
 		var self = this;
 
-
 		if (self.map.type === 'leaflet') {
 			console.error('_addClusterLayer does not work for leaflet maps. Use _plotLeafletLayers instead');
 			return;
 		}
 
-
         var _markersCount = 0;
         var _clusterCount = 0;
-
 
 		data.forEach(function( feature ) {
 
@@ -1199,6 +1102,7 @@ module.exports = (function() {
                 self._clusterMarkers.push( thisMarker );
                 var isCluster = true;
 			} else {
+
                 thisMarker = self.markers[ feature.properties.id ];
                 _markersCount++;
                 var isCluster = false;
@@ -1234,6 +1138,11 @@ module.exports = (function() {
 		});
 
 
+        // As zooms increase, set the max zoom:
+        if ( self.actualMaxZoom < z ) {
+            self.actualMaxZoom = z;
+        }
+
 
 		self.layers[ z ] = {
 			group: group,
@@ -1251,17 +1160,15 @@ module.exports = (function() {
 
 
 
-	// Mapbox outputs bounds in a different format than we want
-	// to send to supercluster, so this will deal with it:
-	MapboxCluster.prototype._getBounds = function() {
-		var b = this.bounds;
-        if (!b.hasOwnProperty('_sw')) { return false; }
-		return [ b._sw.lng, b._sw.lat, b._ne.lng, b._ne.lat ];
-	};
 
 	MapboxCluster.prototype.switchLayer = function( z ) {
 
 		var self = this;
+
+        // Don't try to get a layer beyond the deepest cluster layer.
+        if (z > self.actualMaxZoom) {
+            z = self.actualMaxZoom;
+        }
 
 		requestAnimationFrame(function() {
 
@@ -1293,10 +1200,136 @@ module.exports = (function() {
                 console.warn("No newLayer for " + z);
             }
 
-		})
-
-
+		});
 	};
+
+
+    /*===============================================
+    =            Post setup manipulation            =
+    ===============================================*/
+
+    MapboxCluster.prototype.removeMarker = function( marker, repaint ) {
+        var self = this;
+        var __id = marker.__id;
+
+        // Find i from geo
+        var geoIndex;
+        self.geoJSON.forEach( function(a, i) {
+            if (a.properties.id === __id ) {
+                geoIndex = i;
+            }
+        });
+
+        if (typeof geoIndex === 'number') {
+            self.geoJSON = self.geoJSON.splice( geoIndex, 1 );
+        }
+
+        // Remove from a map
+        marker._remove();
+
+        delete self.markers[ __id ];
+
+        // Re calculate the clusters?
+        // we can't remove a point from a cluster index, see:
+        // https://github.com/mapbox/supercluster/issues/19
+        // So until they resolve the above we have to rebuild - it should be avoided
+        // to remove clusters.
+        //
+        // The idea behind repaint is we might want to loop through, remove a lot of markers and
+        // only repaint on the last marker, since clusters may change or flash, eg filtered data
+        // points.
+        if (repaint) {
+            self._createLayers();
+        }
+
+    };
+
+    MapboxCluster.prototype.removeMarkers = function( repaint ) {
+        var self = this;
+        self.geoJSON = [];
+        for ( var id in self.markers ) {
+            if (self.markers.hasOwnProperty( id ) ) {
+                var m = self.markers[ id ];
+                m._remove();
+                delete m;
+            }
+        };
+
+        // Empty the markers
+        self.markers = {};
+
+        // Reset the bounds
+        self.bounds = this.map.LngLatBounds();
+
+        // Would effectively kill the clusters, but probably
+        // isn't worth calling - you'd be using this in conjunction with replaceMarkers
+        if (repaint) {
+            self._createLayers();
+        }
+    };
+
+
+    MapboxCluster.prototype.replaceMarkers = function( locations, repaint ) {
+        // Default this to true
+        if (typeof repaint === 'undefined') {
+            repaint = true;
+        }
+
+        if (repaint) {
+            $('#' + this.map.container.id + ' .mapLocation').removeClass('mapLocation--ready');
+        }
+
+        var self = this;
+
+        requestAnimationFrame( function() {
+
+            self.removeMarkers();
+            self.addLocations( locations, repaint );
+
+        });
+    };
+
+
+    /*=====  End of Post setup manipulation  ======*/
+
+
+    /*===========================================
+    =            Leaflet Alternative            =
+    ===========================================*/
+
+    MapboxCluster.prototype._createLeafletLayers = function () {
+
+        var self = this;
+
+        if (self.map.type != 'leaflet') {
+            console.error("Cannot plot leaflet layers on " + self.map.type + " map"); return;
+        }
+
+        if (self.leafletClusters) {
+            self.leafletClusters.remove();
+        }
+
+        // create L cluster:
+        self.leafletClusters = new L.MarkerClusterGroup({
+            spiderfyOnMaxZoom: false,
+            showCoverageOnHover: false
+        });
+
+        for ( var id in self.markers ) {
+            if (self.markers.hasOwnProperty( id ) ) {
+                var m = self.markers[ id ];
+                m._remove();
+                self.leafletClusters.addLayer( m );
+            }
+        };
+
+        self.leafletClusters.addTo( self.map.map );
+
+    };
+
+
+    /*=====  End of Leaflet Alternative  ======*/
+
 
 	return MapboxCluster;
 
