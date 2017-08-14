@@ -700,6 +700,26 @@ module.exports = (function() {
 
 	// 'options.map' should be an instance of MapboxWrapper
 
+    var _clusterCallback = function( e, marker, $el, markerData, clusterObj ) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var newZoom = clusterObj.getExpansionZoom( markerData );
+
+        if ( clusterObj.map.type === 'leaflet' ) {
+
+        }
+
+        var loc = marker.getLngLat();
+
+        if (loc) {
+            clusterObj.map.flyTo({
+                center: loc,
+                zoom: newZoom + 1
+            });
+        }
+    };
+
 	var defaults = {
 		radius: 50,
 		maxZoom: 22,
@@ -712,23 +732,7 @@ module.exports = (function() {
 		// use these for binding click events and the like
 		clusterCallback: function( e, marker, $el, markerData, clusterObj ) {
 
-				e.preventDefault();
-				e.stopPropagation();
 
-				var newZoom = clusterObj.getExpansionZoom( markerData );
-
-				if ( clusterObj.map.type === 'leaflet' ) {
-
-				}
-
-				var loc = marker.getLngLat();
-
-                if (loc) {
-                    clusterObj.map.flyTo({
-                        center: loc,
-                        zoom: newZoom + 1
-                    });
-                }
 		},
 
 
@@ -1085,15 +1089,21 @@ module.exports = (function() {
 
                 thisMarker = self.map.addMarker( feature.geometry.coordinates, feature.properties, self.clusterTpl );
 
-                if (typeof self.clusterCallback === 'function') {
-                    thisMarker.onClick( function(e) {
-                        if (e) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
+                thisMarker.onClick( function(e) {
+                    if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+
+                    // Do standard function on cluster, where we zoom down
+                    _clusterCallback( e, thisMarker, $el, feature.properties, self );
+
+                    // Then call the cluster callback as passed by an app.
+                    if (typeof self.clusterCallback === 'function') {
                         self.clusterCallback( e, thisMarker, $el, feature.properties, self );
-                    });
-                }
+                    }
+                });
+
 
                 _clusterCount++;
                 self._clusterMarkers.push( thisMarker );
