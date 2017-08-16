@@ -22,8 +22,12 @@ module.exports = (function() {
 	// 'options.map' should be an instance of MapboxWrapper
 
     var _clusterCallback = function( e, marker, $el, markerData, clusterObj ) {
-        e.preventDefault();
-        e.stopPropagation();
+
+        // Only for GL
+        if ( self.map.type == 'mapbox-gl' ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         var newZoom = clusterObj.getExpansionZoom( markerData );
 
@@ -188,8 +192,10 @@ module.exports = (function() {
             // Set up marker callback
             if (typeof self.onClick === 'function') {
                 thisMarker.onClick( function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                    if ( self.map.type == 'mapbox-gl' ) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
                     self.onClick( e, thisMarker, $el, data, self );
                 });
             }
@@ -232,7 +238,7 @@ module.exports = (function() {
         }
 
         if (self.map.type === "leaflet") {
-            return self._createLeafletLayers();
+            return self._createLeafletLayers( callback );
         }
 
         // Create new cluster
@@ -625,7 +631,7 @@ module.exports = (function() {
     =            Leaflet Alternative            =
     ===========================================*/
 
-    MapboxCluster.prototype._createLeafletLayers = function () {
+    MapboxCluster.prototype._createLeafletLayers = function ( callback ) {
 
         var self = this;
 
@@ -643,6 +649,8 @@ module.exports = (function() {
             showCoverageOnHover: false
         });
 
+
+
         for ( var id in self.markers ) {
             if (self.markers.hasOwnProperty( id ) ) {
                 var m = self.markers[ id ];
@@ -652,6 +660,11 @@ module.exports = (function() {
         };
 
         self.leafletClusters.addTo( self.map.map );
+        self.bounds = self.leafletClusters.getBounds();
+
+        if (typeof callback === 'function') {
+            callback( self );
+        }
 
     };
 

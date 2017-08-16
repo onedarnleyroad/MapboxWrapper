@@ -51,7 +51,17 @@ module.exports = (function() {
                 if (Array.isArray( b.bounds ) ) {
                     b._bounds = self.map.LngLatBounds();
                     b.bounds.forEach(function( _b ) {
-                        b._bounds.extend( _b );
+
+                        var thisArr = _b;
+
+                        if (self.map.type == "leaflet") {
+                            thisArr.reverse();
+                        }
+
+                        b._bounds.extend( thisArr );
+
+                        console.log( thisArr, _b );
+
                     });
                 } else {
                     // If object, assume it's a latlong instance.
