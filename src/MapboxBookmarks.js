@@ -60,7 +60,6 @@ module.exports = (function() {
 
                         b._bounds.extend( thisArr );
 
-                        console.log( thisArr, _b );
 
                     });
                 } else {

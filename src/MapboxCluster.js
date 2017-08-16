@@ -23,12 +23,6 @@ module.exports = (function() {
 
     var _clusterCallback = function( e, marker, $el, markerData, clusterObj ) {
 
-        // Only for GL
-        if ( self.map.type == 'mapbox-gl' ) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
         var newZoom = clusterObj.getExpansionZoom( markerData );
 
         if ( clusterObj.map.type === 'leaflet' ) {
@@ -417,13 +411,14 @@ module.exports = (function() {
                 thisMarker = self.map.addMarker( feature.geometry.coordinates, feature.properties, self.clusterTpl );
 
                 thisMarker.onClick( function(e) {
-                    if (e) {
+                    if (self.map.type == 'mapbox-gl') {
                         e.preventDefault();
                         e.stopPropagation();
                     }
 
                     // Do standard function on cluster, where we zoom down
                     _clusterCallback( e, thisMarker, $el, feature.properties, self );
+
 
                     // Then call the cluster callback as passed by an app.
                     if (typeof self.clusterCallback === 'function') {
