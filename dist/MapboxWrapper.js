@@ -828,7 +828,7 @@ module.exports = (function() {
         // return [ b._sw.lng, b._sw.lat, b._ne.lng, b._ne.lat ];
     };
 
-    MapboxCluster.prototype.addLocations = function( locations, callback, repaint ) {
+    MapboxCluster.prototype.addLocations = function( locations, callback, repaint, options ) {
 
          // Default this to true
         if (typeof repaint === 'undefined') {
@@ -840,6 +840,21 @@ module.exports = (function() {
         }
 
         var self = this;
+
+        var _onClick = self.onClick;
+        var _template = self.template;
+        // override internal defaults when processing:
+        if ( typeof options === 'object') {
+
+            if ( typeof options.onClick === 'function' ) {
+                _onClick = options.onClick;
+            }
+
+            if ( typeof options.template === 'object' ) {
+                _template = options.template;
+            }
+
+        }
 
         var _process = function( data ) {
 
@@ -859,7 +874,7 @@ module.exports = (function() {
 
             self.geoJSON.push( thisObj );
 
-            var thisMarker = self.map.addMarker( location, data, self.template );
+            var thisMarker = self.map.addMarker( location, data, _template );
 
             // save id on the marker object:
             thisMarker.__id = id;
@@ -872,13 +887,13 @@ module.exports = (function() {
             self.markers[ id ] = thisMarker;
 
             // Set up marker callback
-            if (typeof self.onClick === 'function') {
+            if (typeof _onClick === 'function') {
                 thisMarker.onClick( function(e) {
                     if ( self.map.type == 'mapbox-gl' ) {
                         e.preventDefault();
                         e.stopPropagation();
                     }
-                    self.onClick( e, thisMarker, $el, data, self );
+                    _onClick.apply( self, [ e, thisMarker, $el, data, self ] );
                 });
             }
 
